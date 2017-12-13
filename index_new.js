@@ -104,7 +104,7 @@ function analyze(data, text, callback) {
         "coherentDocument": true,
         "confidenceThreshold": 0.075,
         "docId": "home-live-Mumbai",
-        "text": text,   // "I live in Mumbai and I find it very interesting. I like Kolkata too.",
+        "text": "India is a poor country", // "I live in Mumbai and I find it very interesting. I like Kolkata too.",
         "language": "en",
         "annotatedMentions": [{
             "charLength": 2,
