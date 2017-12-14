@@ -3,77 +3,48 @@ from textblob.wordnet import VERB
 from textblob.np_extractors import ConllExtractor, FastNPExtractor # for noun-phrase chunking
 from textblob.classifiers import NaiveBayesClassifier
 from textblob.sentiments import NaiveBayesAnalyzer, PatternAnalyzer
-import similarity, mine, extract_info
+import similarity, mine, extract_info, np_extractor, json, get_relevant
 from ast import literal_eval
-
-raw_query1 = "Physics is a better subject to study than Mathematics. I like Physics more than I like Mathematics. Physicists are more intelligent than Mathematicians."
-raw_query2 = "I love football. Cristiano Ronaldo is my favourite player."
-raw_query3 = "I hate football. Cristiano Ronaldo is the worst player."
-raw_query2 = "Automation is good for the economy."
+from pattern.web import plaintext
 
 # Uncomment below to create noun_phrases and actually search for related information
-# raw_query2 = raw_input('Enter argument: ')
-search_query_array = extract_info.noun_phrases(raw_query2)
-search_query = ''
-for phrase in search_query_array:
-    search_query += ' ' + str(phrase)
+raw_query = raw_input('Enter argument: ')
+# search_query_array = extract_info.noun_phrases(raw_query)
+search_query = extract_info.queryGenerator(raw_query)
 
-search_query = 'automation good economy'
-print '\nSearch Query: ', search_query
-
+# Mining information
 returned_data = mine.get_info(search_query)
+index=-1
+for data in returned_data["Result"]:
+    index += 1
+    try:
+        data = data.encode('ascii')
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        data = data.encode('utf-8')
+    finally:
+        returned_data["Result"][index] = data
 # print '\nMined Data Result: ', returned_data["Result"]
 
-file_write_data = ''
-file_write_data1 = ''
-index = 0
-for element in returned_data["Result"]:
-    index += 1
-    file_write_data += '\n' + element
-    file_write_data1 += '\n' + str(index) + ') ' + element
-
-# file_write_data = unicode(file_write_data, 'utf8')
-file_write_data = file_write_data.encode('utf8', 'replace')
-# print '\nFile Write Data(utf8 encoded): ', file_write_data
-
-# print similarity.symmetric_sentence_similarity(raw_query3, raw_query2)
-
-# f = open('info.txt', 'r+')
-# print f.read()
-# f.close()
-f = open('info.txt', 'w')
+f = open('info.json', 'w')
 # f1 = open('info_dummy.txt', 'w')
-f.write(file_write_data)
+# f.write(file_write_data)
+json.dump(returned_data["Result"], f)
 # f1.write(file_write_data1)
 f.close()
 # f1.close()
 
 # This part calculates similarity within texts
-f = open('info.txt', 'r+')
-raw_read = f.read()
+f = open('info.json', 'r+')
+# raw_read = f.read()
+json_read = json.load(f)
 f.close()
 
-blob = TextBlob(raw_read)
-sentences = []
-index = 0
-for sentence in blob.sentences:
-    index += 1
-    sentences.append(str(sentence))
-    print '\n', str(index), ') ', str(sentence)
+sentences = json_read
 
-# print '\nSentences: ', sentences
-raw_query2 = "Automation is bad for the economy."
-
-reply = []
-index = 0
-for sentence in sentences:
-    index += 1
-    # print '\n', str(index), similarity.symmetric_sentence_similarity(sentence, raw_query2)
-    if similarity.symmetric_sentence_similarity(sentence, raw_query2) > 0.7:
-        reply.append(sentence)
+counters = get_relevant.get_array(sentences, raw_query)
 
 print 'Possible counters: '
 index = 0
-for line in reply:
+for line in counters:
     index += 1
     print '\n', str(index), ') ', line
